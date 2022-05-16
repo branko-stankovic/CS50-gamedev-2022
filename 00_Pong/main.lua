@@ -16,6 +16,10 @@ function love.load()
     -- use nearest-neighbor filtering
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
+    smallFont = love.graphics.newFont('font.ttf', 8)
+
+    love.graphics.setFont(smallFont)
+
     -- initialize our virtual resolution, which will be rendered within our
     -- actual window no matter its dimensions; replaces our love.window.setMode
     -- from last example
@@ -38,8 +42,24 @@ function love.draw()
     -- begin rendering at virtual resolution
     push:apply('start')
 
-    -- note we are now using virtual width and height for text placement
-    love.graphics.printf('Hello Pong!', 0, VIRTUAL_HEIGHT / 2 - 6, VIRTUAL_WIDTH, 'center')
+    -- clear the screen with the specific color
+    love.graphics.clear(0.15, 0.17, 0.2, 1)
+
+    -- draw welcome text toward the top of the screen
+    love.graphics.printf('Hello Pong!', 0, 20, VIRTUAL_WIDTH, 'center')
+
+    --
+    -- paddles are simply rectangles we draw on the screen at certain points,
+    -- as is the ball
+    --
+    -- render first paddle (left side)
+    love.graphics.rectangle('fill', 10, 30, 5, 20)
+
+    -- render second paddle (right side)
+    love.graphics.rectangle('fill', VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 50, 5, 20)
+
+    -- render ball (center)
+    love.graphics.rectangle('fill', VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
 
     -- end rendering at virtual resolution
     push:apply('end')
