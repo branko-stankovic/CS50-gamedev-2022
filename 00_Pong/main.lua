@@ -43,8 +43,7 @@ function love.load()
 
     -- retro looking font object
     smallFont = love.graphics.newFont('font.ttf', 8)
-
-    -- larger font for drawing the score on the screen
+    largeFont = love.graphics.newFont('font.ttf', 16)
     scoreFont = love.graphics.newFont('font.ttf', 32)
 
     love.graphics.setFont(smallFont)
@@ -57,6 +56,15 @@ function love.load()
         resizable = false,
         vsync = true
     })
+
+    -- set up our sound effects; later, we can just index this table and
+    -- call each entry's 'play' method
+    sounds = {
+        ['paddle_hit'] = love.audio.newSource('sounds/paddle_hit.wav', 'static'),
+        ['paddle_hit_2'] = love.audio.newSource('sounds/paddle_hit_2.wav', 'static'),
+        ['score'] = love.audio.newSource('sounds/score.wav', 'static'),
+        ['wall_hit'] = love.audio.newSource('sounds/wall_hit.wav', 'static')
+    }
 
     -- initialize score variables, used for rendering on the screen and keeping
     -- track of the winner
@@ -71,10 +79,32 @@ function love.load()
     -- place a ball in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
 
-    -- game state variable used to transition between different parts of the game
-    -- used for beginning, menus, main game, high score list, etc.
-    -- we will use this to determine behavior during render and update
+    -- either going to be 1 or 2; whomever is scored on gets to serve the
+    -- following turn
+    servingPlayer = 1
+
+    -- player who won the game; not set to a proper value until we reach
+    -- that state in the game
+    winningPlayer = 0
+
+    -- the state of our game; can be any of the following:
+    -- 1. 'start' (the beginning of the game, before first serve)
+    -- 2. 'serve' (waiting on a key press to serve the ball)
+    -- 3. 'play' (the ball is in play, bouncing between paddles)
+    -- 4. 'done' (the game is over, with a victor, ready for restart)
     gameState = 'start'
+
+    -- a table we'll use to keep track of which keys have been pressed this
+    -- frame, to get around the fact that LOVE's default callback won't let us
+    -- test for input from within other functions
+    love.keyboard.keysPressed = {}
+end
+
+--[[
+    Called whenever we change the dimensions of our window, as by dragging out its bottom corner, for example. In this case, we only need to worry about calling out to 'push' to handle the resizing. Takes in a 'w' and 'h' variable representing width and height, respectively.
+]]
+function love.resize(w, h)
+    push:resize(w, h)
 end
 
 --[[
@@ -82,43 +112,125 @@ end
     since the last frame, which love2d supplies us.
 ]]
 function love.update(dt)
-    if gameState == 'play' then
+    if gameState == 'start' then
+        -- pressing enter will begin the game
+        if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') then
+            gameState = 'serve'
+        end
+    elseif gameState == 'serve' then
+        -- pressing enter will serve the ball
+        if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') then
+            gameState = 'play'
+
+            -- before switching to play, initialize ball's velocity based
+            -- on player who last scored
+            ball.dy = math.random(-50, 50)
+            if servingPlayer == 1 then
+                ball.dx = math.random(140, 200)
+            else
+                ball.dx = -math.random(140, 200)
+            end
+        end
+    elseif gameState == 'play' then
         -- detect ball collision with paddles, reversing dx if true and
         -- slightly increasing it, then altering the dy based on the position
+        -- at which it collided, then playing a sound effect
         if ball:collides(player1) then
             ball.dx = -ball.dx * 1.03
             ball.x = player1.x + 5
 
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
+            -- formula for adjusting the angle of the ball when hit by the
+            -- paddle; if the ball hits the paddle above its midpoint, then
+            -- the dy should be negative and scaled by how far above the
+            -- midpoint it hits; the opposite is true for below the midpoint,
+            -- only the dy should be positive
+            if ball.y < player1.y + player1.height / 2 then
+                ball.dy = -math.random(50, 100) * (player1.y + (player1.height / 2)) / ball.y
             else
-                ball.dy = math.random(10, 150)
+                ball.dy = math.random(50, 100) * (player1.y + player1.height) / ball.y
             end
+
+            sounds['paddle_hit']:play()
         end
 
         if ball:collides(player2) then
             ball.dx = -ball.dx * 1.03
             ball.x = player2.x - 4
 
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
+            if ball.y < player2.y + player2.height / 2 then
+                ball.dy = -math.random(50, 100) * (player2.y + (player2.height / 2)) / ball.y
             else
-                ball.dy = math.random(10, 150)
+                ball.dy = math.random(50, 100) * (player2.y + player2.height) / ball.y
             end
+
+            sounds['paddle_hit_2']:play()
         end
 
-        -- detect upper and lower screen boundary collision and reverse
+        -- detect upper and lower screen boundary collision, playing a sound
+        -- effect and reversing dy if true
         if ball.y <= 0 then
             ball.y = 0
             ball.dy = -ball.dy
+            sounds['wall_hit']:play()
         end
 
         -- -4 to account for the ball's size
         if ball.y >= VIRTUAL_HEIGHT - 4 then
             ball.y = VIRTUAL_HEIGHT - 4
             ball.dy = -ball.dy
+            sounds['wall_hit']:play()
+        end
+
+        -- if we reach the left or right edge of the screen, go back to serve
+        -- and update the score and serving player
+        if ball.x < 0 then
+            servingPlayer = 1
+            player2Score = player2Score + 1
+            sounds['score']:play()
+
+            -- if we've reached a score of 10, the game is over; set the
+            -- state to done so we can show the victory message
+            if player2Score == 10 then
+                winningPlayer = 2
+                gameState = 'done'
+            else
+                gameState = 'serve'
+                -- places the ball in the middle of the screen, no velocity
+                ball:reset()
+            end
+        end
+
+        if ball.x > VIRTUAL_WIDTH then
+            servingPlayer = 2
+            player1Score = player1Score + 1
+            sounds['score']:play()
+
+            if player1Score == 10 then
+                winningPlayer = 1
+                gameState = 'done'
+            else
+                gameState = 'serve'
+                ball:reset()
+            end
+        end
+    elseif gameState == 'done' then
+        -- game is simply in a restart phase here, but will set the serving
+        -- player to the opponent of whomever won for fairness!
+        if love.keyboard.wasPressed('enter') or love.keyboard.wasPressed('return') then
+            gameState = 'serve'
+
+            ball:reset()
+
+            -- reset scores to 0
+            player1Score = 0
+            player2Score = 0
+
+            -- decide serving player as the opposite of who won
+            if winningPlayer == 1 then
+                servingPlayer = 2
+            else
+                servingPlayer = 1
+            end
         end
     end
 
@@ -141,39 +253,44 @@ function love.update(dt)
         player2.dy = 0
     end
 
-    -- update our ball based on its DX and DY onlky if we're in play state
-    -- scale the velocity by dt so movement is framerate independent
-    if gameState == 'play' then
-        ball:update(dt)
-    end
-
     player1:update(dt)
     player2:update(dt)
+
+    -- update ball's position
+    ball:update(dt)
+
+    -- clear the table for keys pressed, as the frame has ended
+    love.keyboard.keysPressed = {}
 end
 
 --[[
-    Keyboard input handling, called each frame
-    passes in the key we pressed, so we can access.
+    A callback that processes key strokes as they happen, just the once. Does not account for keys that are held down, which is handled by a separate function ('love.keyboard.isDown'). Useful for when we want things to happen right away, just once, like when we want to quit.
 ]]
 function love.keypressed(key)
+    -- 'key' will be whatever key this callback detected as pressed
     if key == 'escape' then
         -- terminate the application
         love.event.quit()
-    -- if we press enter during the start state of the game, we'll go into play mode
-    -- during play mode, the ball will move in a random direction
-    elseif key == 'enter' or key == 'return' then
-        if gameState == 'start' then
-            gameState = 'play'
-        else
-            gameState = 'start'
+    end
 
-            -- ball's new reset method
-            ball:reset()
-        end
+    -- add to our table of keys pressed this frame
+    love.keyboard.keysPressed[key] = true
+end
+
+--[[
+    A custom function that will let us test for individual keystrokes outside of the default 'love.keypressed' callback, since we can't call that logic elsewhere by default.
+]]
+function love.keyboard.wasPressed(key)
+    if love.keyboard.keysPressed[key] then
+        return true
+    else
+        return false
     end
 end
 
--- [[ called after update, used to draw anything on screen, updated or not ]]
+--[[
+    Called each frame after updatel is responsible simply for drawing all of our game objects and more to the screen.
+]]
 function love.draw()
     -- begin rendering at virtual resolution
     push:apply('start')
@@ -181,20 +298,29 @@ function love.draw()
     -- clear the screen with the specific color
     love.graphics.clear(0.15, 0.17, 0.2, 1)
 
-    -- draw different things based on the state of the game
-    love.graphics.setFont(smallFont)
-
+    -- render different things depending on which part of the game we're in
     if gameState == 'start' then
-        love.graphics.printf('Hello Start State!', 0, 20, VIRTUAL_WIDTH, 'center')
-    else
-        love.graphics.printf('Hello Play State!', 0, 20, VIRTUAL_WIDTH, 'center')
+        -- UI messages
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Welcome to Pong!', 0, 10, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press Enter to begin!!', 0, 20, VIRTUAL_WIDTH, 'center')
+    elseif gameState == 'serve' then
+        -- UI messages
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s serve!", 0, 10, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('Press Enter to serve!', 0, 20, VIRTUAL_WIDTH, 'center')
+    elseif gameState == 'play' then
+        -- no UI messages to display in play
+    elseif gameState == 'done' then
+        -- UI messages
+        love.graphics.setFont(largeFont)
+        love.graphics.printf('Player ' .. tostring(winningPlayer) .. ' wins!', 0, 10, VIRTUAL_WIDTH, 'center')
+        love.graphics.setFont(smallFont)
+        love.graphics.printf('Press Enter to restart!', 0, 30, VIRTUAL_WIDTH, 'center')
     end
 
-    -- draw score on the left and right center of the screen
-    -- need to switch font to draw before actually printing
-    love.graphics.setFont(scoreFont)
-    love.graphics.print(tostring(player1Score), VIRTUAL_WIDTH / 2 - 50, VIRTUAL_HEIGHT / 3)
-    love.graphics.print(tostring(player2Score), VIRTUAL_WIDTH / 2 + 30, VIRTUAL_HEIGHT / 3)
+    -- show the score before ball is rendered so it can move over the text
+    displayScore()
 
     -- render paddles, now using their class's render method
     player1:render()
@@ -208,6 +334,15 @@ function love.draw()
 
     -- end rendering at virtual resolution
     push:apply('end')
+end
+
+--[[
+    Simple function for rendering the scores.
+]]
+function displayScore()
+    love.graphics.setFont(scoreFont)
+    love.graphics.print(tostring(player1Score), VIRTUAL_WIDTH / 2 - 50, VIRTUAL_HEIGHT / 3)
+    love.graphics.print(tostring(player2Score), VIRTUAL_WIDTH / 2 + 30, VIRTUAL_HEIGHT / 3)
 end
 
 --[[
