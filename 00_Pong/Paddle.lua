@@ -25,6 +25,28 @@ function Paddle:init(x, y, width, height)
     self.dy = 0
 end
 
+--[[
+    AI function for the paddle
+    written by branko.stankovic@gmail.com
+    https://github.com/branko-stankovic
+]]
+function Paddle:ai(ball, player1Score)
+    -- starting precision of paddle tracking the ball
+    -- can be altered to increase or decrease difficulty
+    --
+    -- the AI starts with the starting precision, and then
+    -- gets more precise with each human point made
+    -- to make the endgame more exciting
+    startingPrecision = 15
+    paddleMiddlePoint = self.y + self.height / 2
+
+    if (ball.y > paddleMiddlePoint + startingPrecision - player1Score) then
+        self.dy = PADDLE_SPEED
+    elseif (ball.y < paddleMiddlePoint - startingPrecision + player1Score) then
+        self.dy = -PADDLE_SPEED
+    end
+end
+
 function Paddle:update(dt)
     -- math.max here ensures that we're the greater of 0 or the player's
     -- current calculated Y position when pressing up so that we don't
@@ -32,7 +54,7 @@ function Paddle:update(dt)
     -- previously-defined paddle speed scaled by dt
     if self.dy < 0 then
         self.y = math.max(0, self.y + self.dy * dt)
-        -- simnilar to before, this time we use math.min to ensure we don't
+        -- similar to before, this time we use math.min to ensure we don't
         -- go any farther than the bottom of the screen minus the paddle's
         -- height (or else it will go partially bellow, since position is
         -- based on its top left corner)

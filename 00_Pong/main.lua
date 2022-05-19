@@ -94,6 +94,14 @@ function love.load()
     -- 4. 'done' (the game is over, with a victor, ready for restart)
     gameState = 'start'
 
+    -- current mode of the game
+    -- can be multiplayer (player vs player)
+    -- or singleplayer (player vs computer)
+    --
+    -- TODO: implement menu where player can choose
+    -- which mode to play
+    gameMode = 'singleplayer'
+
     -- a table we'll use to keep track of which keys have been pressed this
     -- frame, to get around the fact that LOVE's default callback won't let us
     -- test for input from within other functions
@@ -244,13 +252,18 @@ function love.update(dt)
     end
 
     -- player 2 movement
-    if love.keyboard.isDown('up') then
+    if love.keyboard.isDown('up') and gameMode == 'multiplayer' then
         player2.dy = -PADDLE_SPEED
-    elseif love.keyboard.isDown('down') then
+    elseif love.keyboard.isDown('down') and gameMode == 'multiplayer' then
         -- add positive paddle speed to current Y scaled by dt
         player2.dy = PADDLE_SPEED
     else
         player2.dy = 0
+    end
+
+    -- AI movement for paddle2
+    if gameMode == 'singleplayer' then
+        player2:ai(ball, player1Score)
     end
 
     player1:update(dt)
