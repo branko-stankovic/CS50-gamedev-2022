@@ -17,7 +17,7 @@ local PIPE_IMAGE = love.graphics.newImage('pipe.png')
 PIPE_SPEED = 60
 
 -- height of pipe image, globally accessible
-PIPE_HEIGHT = 288
+PIPE_HEIGHT = 430
 PIPE_WIDTH = 70
 
 function Pipe:init(orientation, y)
@@ -31,14 +31,11 @@ function Pipe:init(orientation, y)
 end
 
 function Pipe:update(dt)
-    -- self.x = self.x + PIPE_SCROLL * dt
+
 end
 
 function Pipe:render()
-    love.graphics.draw(PIPE_IMAGE,
-                    self.x,
+    love.graphics.draw(PIPE_IMAGE, self.x,
                     (self.orientation == 'top' and self.y + PIPE_HEIGHT or self.y),
-                    0,
-                    1,
-                    self.orientation == 'top' and -1 or 1)
+                    0, 1, self.orientation == 'top' and -1 or 1)
 end
