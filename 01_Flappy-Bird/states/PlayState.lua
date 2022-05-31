@@ -20,8 +20,6 @@ function PlayState:init()
     self.bird = Bird()
     self.pipePairs = {}
     self.timer = 0
-
-    -- now keep track of our score
     self.score = 0
 
     -- initialize our last recorded Y value for a gap placement to base other gaps off of
@@ -55,6 +53,7 @@ function PlayState:update(dt)
             if pair.x + PIPE_WIDTH < self.bird.x then
                 self.score = self.score + 1
                 pair.scored = true
+                sounds['score']:play()
             end
         end
 
@@ -72,13 +71,13 @@ function PlayState:update(dt)
         end
     end
 
-    -- update bird based on gravity and input
-    self.bird:update(dt)
-
     -- simple collision between bird and all pipes in pairs
     for k, pair in pairs(self.pipePairs) do
         for l, pipe in pairs(pair.pipes) do
             if self.bird:collides(pipe) then
+                sounds['explosion']:play()
+                sounds['hurt']:play()
+
                 gStateMachine:change('score', {
                     score = self.score
                 })
@@ -86,8 +85,14 @@ function PlayState:update(dt)
         end
     end
 
+    -- update bird based on gravity and input
+    self.bird:update(dt)
+
     -- reset if we get to the ground
     if self.bird.y > VIRTUAL_HEIGHT - 15 then
+        sounds['explosion']:play()
+        sounds['hurt']:play()
+
         gStateMachine:change('score', {
             score = self.score
         })
@@ -103,4 +108,20 @@ function PlayState:render()
     love.graphics.print('Score: ' .. tostring(self.score), 8, 8)
 
     self.bird:render()
+end
+
+--[[
+    Called when this state is transitioned to from another state.
+]]
+function PlayState:enter()
+    -- if we're coming from death, restart scrolling
+    scrolling = true
+end
+
+--[[
+    Called when this state changes to another state.
+]]
+function PlayState:exit()
+    -- stop scrolling for the death/score screen
+    scrolling = false
 end
