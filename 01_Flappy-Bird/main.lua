@@ -71,7 +71,7 @@ function love.load()
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
     -- seed the RNG
-    math.randomseed(os.time())
+    --math.randomseed(os.time())
 
     -- app window title
     love.window.setTitle('Fifty Bird')
