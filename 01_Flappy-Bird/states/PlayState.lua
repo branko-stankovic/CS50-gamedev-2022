@@ -25,7 +25,15 @@ function PlayState:init()
     -- initialize our last recorded Y value for a gap placement to base other gaps off of
     self.lastY = -PIPE_HEIGHT + math.random(80) + 20
 
+    -- randomizing the pipePair spawn interval
+    --
+    -- spawn interval is still random, but runs in cycles, getting progressively harder and
+    -- harder, and when the cycle resets it gets easier once again at the beginning of the
+    -- cycle, then getting harder and harder again
     self.nextPipeInterval = 2
+    self.spawnCycleLength = 10
+    self.minSpawnInterval = 1.5
+    self.maxSpawnInterval = 12
 end
 
 function PlayState:update(dt)
@@ -35,7 +43,11 @@ function PlayState:update(dt)
     -- spawn first pair of pipes after 2 seconds
     if self.timer > self.nextPipeInterval then
         -- set the next pipePair timing
-        self.nextPipeInterval = math.max(2, love.math.random(2, 10) - (self.score / 10))
+        -- pipePair spawn interval is a random number between min and max spawn interval, minus the current player score
+        -- so it gets harder and harder with score getting higher, but runs on a cycle via mod operator, so the player gets
+        -- a break after a hard part of the level
+        -- also, spawn interval is hard capped to be minimum of 2, so it doesn't get too close
+        self.nextPipeInterval = math.max(self.minSpawnInterval, love.math.random(self.minSpawnInterval, self.maxSpawnInterval) - (self.score % self.spawnCycleLength))
 
         -- modify the last Y coordinate we placed so pipe gaps aren't too fat apart
         -- no higher than 10 pixels below the top edge of the screen,
