@@ -66,12 +66,12 @@ local BACKGROUND_LOOPING_POINT = 413
 -- scrolling variable to pause the game when we collide with a pipe
 local scrolling = true
 
+-- make the paused state global, so the playstate can access it
+paused = false
+
 function love.load()
     -- initialize our nearest neighbor filter
     love.graphics.setDefaultFilter('nearest', 'nearest')
-
-    -- seed the RNG
-    --math.randomseed(os.time())
 
     -- app window title
     love.window.setTitle('Fifty Bird')
@@ -160,7 +160,7 @@ function love.mouse.wasPressed(button)
 end
 
 function love.update(dt)
-    if scrolling then
+    if scrolling and not paused then
         -- scroll background by preset speed * dt, looping back to 0 after the looping point
         backgroundScroll = (backgroundScroll + BACKGROUND_SCROLL_SPEED * dt) % BACKGROUND_LOOPING_POINT
 

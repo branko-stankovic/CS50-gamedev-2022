@@ -37,6 +37,22 @@ function PlayState:init()
 end
 
 function PlayState:update(dt)
+    -- player can now pause the game
+    if love.keyboard.wasPressed('p') then
+        if paused then
+            sounds['music']:play()
+            paused = false
+        else
+            sounds['music']:pause()
+            paused = true
+        end
+    end
+
+    -- if the game has been paused, do not move anything on the screen
+    if paused then
+        return
+    end
+
     -- update timer for pipe spawning
     self.timer = self.timer + dt
 
@@ -125,6 +141,14 @@ function PlayState:render()
     love.graphics.print('Score: ' .. tostring(self.score), 8, 8)
 
     self.bird:render()
+
+    if paused then
+        love.graphics.setFont(flappyFont)
+        love.graphics.printf('PAUSED', 0, 64, VIRTUAL_WIDTH, 'center')
+
+        love.graphics.setFont(mediumFont)
+        love.graphics.printf('Press P to unpause', 0, 100, VIRTUAL_WIDTH, 'center')
+    end
 end
 
 --[[
