@@ -60,8 +60,15 @@ local GROUND_SCROLL_SPEED = 60
 -- point at which we should loop our background back to X 0
 local BACKGROUND_LOOPING_POINT = 413
 
--- point at which we should loop our ground back to X 0
---local GROUND_LOOPING_POINT = 514
+-- images for medals, shown at the score screen
+--
+-- CREDITS:
+-- all images for medals are taken from https://kenney.nl
+-- https://kenney.nl/assets/medals
+--
+bronze_medal = love.graphics.newImage('bronze_medal.png')
+silver_medal = love.graphics.newImage('silver_medal.png')
+gold_medal = love.graphics.newImage('gold_medal.png')
 
 -- scrolling variable to pause the game when we collide with a pipe
 local scrolling = true
