@@ -68,7 +68,7 @@ function PlayState:update(dt)
         -- modify the last Y coordinate we placed so pipe gaps aren't too fat apart
         -- no higher than 10 pixels below the top edge of the screen,
         -- and no lower than a gap length (90 pixels) from the bottom
-        local y = math.max(-PIPE_HEIGHT + 20, math.min(self.lastY + love.math.random(-20 - self.nextPipeInterval, 20 + self.nextPipeInterval), VIRTUAL_HEIGHT - 90 - PIPE_HEIGHT))
+        local y = math.max(-PIPE_HEIGHT + 30, math.min(self.lastY + love.math.random(-20 - self.nextPipeInterval, 20 + self.nextPipeInterval), VIRTUAL_HEIGHT - 90 - PIPE_HEIGHT))
         self.lastY = y
 
         -- add a new pipe pair at the end of the screen at our new Y
