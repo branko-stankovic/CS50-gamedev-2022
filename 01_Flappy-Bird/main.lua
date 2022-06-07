@@ -65,7 +65,6 @@ local BACKGROUND_LOOPING_POINT = 413
 -- CREDITS:
 -- all images for medals are taken from https://kenney.nl
 -- https://kenney.nl/assets/medals
---
 bronze_medal = love.graphics.newImage('bronze_medal.png')
 silver_medal = love.graphics.newImage('silver_medal.png')
 gold_medal = love.graphics.newImage('gold_medal.png')
