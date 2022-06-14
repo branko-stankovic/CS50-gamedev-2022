@@ -21,6 +21,14 @@ function VictoryState:enter(params)
     self.ball = params.ball
 end
 
+function VictoryState:enter(params)
+    self.level = params.level
+    self.score = params.score
+    self.paddle = params.paddle
+    self.health = params.health
+    self.ball = params.ball
+end
+
 function VictoryState:update(dt)
     self.paddle:update(dt)
 
