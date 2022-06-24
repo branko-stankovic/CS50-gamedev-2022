@@ -38,7 +38,7 @@ function VictoryState:update(dt)
             -- increment health by 1 if we lost some in the last level
             health = math.min(3, self.health + 1),
             score = self.score,
-            highScores = self.highScores
+            highScores = self.highScores,
         })
     end
 end

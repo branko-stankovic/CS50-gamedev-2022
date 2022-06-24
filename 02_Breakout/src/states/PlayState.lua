@@ -85,6 +85,12 @@ function PlayState:update(dt)
             -- trigger the brick's hit function, which removes it from play
             brick:hit()
 
+            -- give some random chance to
+            -- increase paddle size if not already maxed out
+            if love.math.random(1, 10) > 8  and self.health == 1 then
+                self.paddle:increase()
+            end
+
             -- go to our victory screen if there are no more bricks left
             if self:checkVictory() then
                 gSounds['victory']:play()
@@ -148,6 +154,7 @@ function PlayState:update(dt)
     -- if ball goes below bounds, revert to serve state and decrease health
     if self.ball.y >= VIRTUAL_HEIGHT then
         self.health = self.health - 1
+        self.paddle:decrease()
         gSounds['hurt']:play()
 
         if self.health == 0 then
