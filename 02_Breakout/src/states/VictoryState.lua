@@ -35,7 +35,8 @@ function VictoryState:update(dt)
             level = self.level + 1,
             bricks = LevelMaker.createMap(self.level + 1),
             paddle = self.paddle,
-            health = self.health,
+            -- increment health by 1 if we lost some in the last level
+            health = math.min(3, self.health + 1),
             score = self.score,
             highScores = self.highScores
         })
