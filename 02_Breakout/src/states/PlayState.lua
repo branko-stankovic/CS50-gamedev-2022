@@ -32,6 +32,12 @@ function PlayState:enter(params)
     -- give ball random starting velocity
     self.ball.dx = math.random(-200, 200)
     self.ball.dy = math.random(-50, -60)
+
+    powerup = Powerup()
+    local powerupActive = false
+
+    balls = {}
+    table.insert(balls, self.ball)
 end
 
 function PlayState:update(dt)
@@ -50,127 +56,173 @@ function PlayState:update(dt)
 
     -- update positions based on velocity
     self.paddle:update(dt)
-    self.ball:update(dt)
 
-    if self.ball:collides(self.paddle) then
-        -- raise ball above paddle in case it goes below it, then reverse dy
-        self.ball.y = self.paddle.y - 8
-        self.ball.dy = -self.ball.dy
+    for b, ball in pairs(balls) do
+        ball:update(dt)
+    end
 
-        --
-        -- tweak angle of bounce based on where it hits the paddle
-        --
+    powerup:update(dt)
 
-        -- if we hit the paddle on its left side while moving left
-        if self.ball.x < self.paddle.x + (self.paddle.width / 2) and self.paddle.dx < 0 then
-            self.ball.dx = -50 + -(8 * (self.paddle.x + self.paddle.width / 2 - self.ball.x))
+    for b, ball in pairs(balls) do
+        if ball:collides(self.paddle) then
+            -- raise ball above paddle in case it goes below it, then reverse dy
+            ball.y = self.paddle.y - 8
+            ball.dy = -ball.dy
 
-            -- else if we hit the paddle on its right side while moving right
-        elseif self.ball.x > self.paddle.x + (self.paddle.width / 2) and self.paddle.dx > 0 then
-            self.ball.dx = 50 + (8 * math.abs(self.paddle.x + self.paddle.width / 2 - self.ball.x))
+            --
+            -- tweak angle of bounce based on where it hits the paddle
+            --
+
+            -- if we hit the paddle on its left side while moving left
+            if ball.x < self.paddle.x + (self.paddle.width / 2) and self.paddle.dx < 0 then
+                ball.dx = -50 + -(8 * (self.paddle.x + self.paddle.width / 2 - ball.x))
+
+                -- else if we hit the paddle on its right side while moving right
+            elseif ball.x > self.paddle.x + (self.paddle.width / 2) and self.paddle.dx > 0 then
+                ball.dx = 50 + (8 * math.abs(self.paddle.x + self.paddle.width / 2 - ball.x))
+            end
+
+            gSounds['paddle-hit']:play()
         end
+    end
 
-        gSounds['paddle-hit']:play()
+    if powerup:collides(self.paddle) then
+        powerup:reset()
+        powerupActive = true
+
+        self.ball2 = Ball()
+        self.ball2.skin = love.math.random(7)
+
+        self.ball2.x = self.paddle.x + self.paddle.width / 2 - self.ball2.width / 2
+        self.ball2.y = self.paddle.y - self.ball2.height
+
+        self.ball2.dx = love.math.random(-200, 200)
+        self.ball2.dy = love.math.random(-50, -60)
+
+        table.insert(balls, self.ball2)
+
+        self.ball3 = Ball()
+        self.ball3.skin = love.math.random(7)
+
+        self.ball3.x = self.paddle.x + self.paddle.width / 2 - self.ball3.width / 2
+        self.ball3.y = self.paddle.y - self.ball3.height
+
+        self.ball3.dx = love.math.random(-200, 200)
+        self.ball3.dy = love.math.random(-50, -60)
+
+        table.insert(balls, self.ball3)
     end
 
     -- detect collision across all bricks with the ball
-    for k, brick in pairs(self.bricks) do
+    for b, ball in pairs(balls) do
+        for k, brick in pairs(self.bricks) do
 
-        -- only check collision if we're in play
-        if brick.inPlay and self.ball:collides(brick) then
+            -- only check collision if we're in play
+            if brick.inPlay and ball:collides(brick) then
 
-            -- add to score
-            self.score = self.score + (brick.tier * 200 + brick.color * 25)
+                -- add to score
+                self.score = self.score + (brick.tier * 200 + brick.color * 25)
 
-            -- trigger the brick's hit function, which removes it from play
-            brick:hit()
+                -- trigger the brick's hit function, which removes it from play
+                brick:hit()
 
-            -- give some random chance to
-            -- increase paddle size if not already maxed out
-            if love.math.random(1, 10) > 8  and self.health == 1 then
-                self.paddle:increase()
+                if love.math.random(1, 10) > 3 and not powerupActive then
+                    powerup.dy = 30
+                end
+
+                -- give some random chance to
+                -- increase paddle size if not already maxed out
+                if love.math.random(1, 10) > 8  and self.health == 1 then
+                    self.paddle:increase()
+                end
+
+                -- go to our victory screen if there are no more bricks left
+                if self:checkVictory() then
+                    gSounds['victory']:play()
+
+                    gStateMachine:change('victory', {
+                        level = self.level,
+                        paddle = self.paddle,
+                        health = self.health,
+                        score = self.score,
+                        highScores = self.highScores,
+                        ball = self.ball
+                    })
+                end
+
+                --
+                -- collision code for bricks
+                --
+                -- we check to see if the opposite side of our velocity is outside of the brick;
+                -- if it is, we trigger a collision on that side. Else we're within the X + width of
+                -- the brick and should check to see if the top or bottom edge is outside of the brick,
+                -- colliding on the top or bottom accordingly
+                --
+
+                -- left edge; only check if we're moving right
+                if ball.x + 2 < brick.x and ball.dx > 0 then
+
+                    -- flip x velocity and reset position outside of brick
+                    ball.dx = -ball.dx
+                    ball.x = brick.x - 8
+
+                -- right edge; only check if we're moving left
+                elseif ball.x + 6 > brick.x + brick.width and ball.dx < 0 then
+
+                    -- flip x velocity and reset position outside of brick
+                    ball.dx = -ball.dx
+                    ball.x = brick.x + 32
+
+                -- top edge if no X collisions, always check
+                elseif ball.y < brick.y then
+
+                    -- flip y velocity and reset position outside of brick
+                    ball.dy = -ball.dy
+                    ball.y = brick.y - 8
+
+                -- bottom edge if no X collisions or top collisions, last possibility
+                else
+
+                    -- flip y velocity and reset position outside of brick
+                    ball.dy = -ball.dy
+                    ball.y = brick.y + 16
+                end
+
+                -- slightly scale the y velocity to speed up the game
+                ball.dy = ball.dy * 1.02
+
+                -- only allow colliding with one brick, for corners
+                break
             end
-
-            -- go to our victory screen if there are no more bricks left
-            if self:checkVictory() then
-                gSounds['victory']:play()
-
-                gStateMachine:change('victory', {
-                    level = self.level,
-                    paddle = self.paddle,
-                    health = self.health,
-                    score = self.score,
-                    highScores = self.highScores,
-                    ball = self.ball
-                })
-            end
-
-            --
-            -- collision code for bricks
-            --
-            -- we check to see if the opposite side of our velocity is outside of the brick;
-            -- if it is, we trigger a collision on that side. Else we're within the X + width of
-            -- the brick and should check to see if the top or bottom edge is outside of the brick,
-            -- colliding on the top or bottom accordingly
-            --
-
-            -- left edge; only check if we're moving right
-            if self.ball.x + 2 < brick.x and self.ball.dx > 0 then
-
-                -- flip x velocity and reset position outside of brick
-                self.ball.dx = -self.ball.dx
-                self.ball.x = brick.x - 8
-
-            -- right edge; only check if we're moving left
-            elseif self.ball.x + 6 > brick.x + brick.width and self.ball.dx < 0 then
-
-                -- flip x velocity and reset position outside of brick
-                self.ball.dx = -self.ball.dx
-                self.ball.x = brick.x + 32
-
-            -- top edge if no X collisions, always check
-            elseif self.ball.y < brick.y then
-
-                -- flip y velocity and reset position outside of brick
-                self.ball.dy = -self.ball.dy
-                self.ball.y = brick.y - 8
-
-            -- bottom edge if no X collisions or top collisions, last possibility
-            else
-
-                -- flip y velocity and reset position outside of brick
-                self.ball.dy = -self.ball.dy
-                self.ball.y = brick.y + 16
-            end
-
-            -- slightly scale the y velocity to speed up the game
-            self.ball.dy = self.ball.dy * 1.02
-
-            -- only allow colliding with one brick, for corners
-            break
         end
     end
 
     -- if ball goes below bounds, revert to serve state and decrease health
-    if self.ball.y >= VIRTUAL_HEIGHT then
-        self.health = self.health - 1
-        self.paddle:decrease()
-        gSounds['hurt']:play()
+    for b, ball in pairs(balls) do
+        if ball.y >= VIRTUAL_HEIGHT and #balls == 1 then
+            self.health = self.health - 1
+            self.paddle:decrease()
+            powerupActive = false
+            powerup:reset()
+            gSounds['hurt']:play()
 
-        if self.health == 0 then
-            gStateMachine:change('game-over', {
-                score = self.score,
-                highScores = self.highScores
-            })
-        else
-            gStateMachine:change('serve', {
-                paddle = self.paddle,
-                bricks = self.bricks,
-                health = self.health,
-                score = self.score,
-                highScores = self.highScores,
-                level = self.level
-            })
+            if self.health == 0 then
+                gStateMachine:change('game-over', {
+                    score = self.score,
+                    highScores = self.highScores
+                })
+            else
+                gStateMachine:change('serve', {
+                    paddle = self.paddle,
+                    bricks = self.bricks,
+                    health = self.health,
+                    score = self.score,
+                    highScores = self.highScores,
+                    level = self.level
+                })
+            end
+        elseif ball.y >= VIRTUAL_HEIGHT and #balls > 1 then
+            table.remove(balls, b)
         end
     end
 
@@ -196,7 +248,12 @@ function PlayState:render()
     end
 
     self.paddle:render()
-    self.ball:render()
+
+    for b, ball in pairs(balls) do
+        ball:render()
+    end
+
+    powerup:render()
 
     renderScore(self.score)
     renderHealth(self.health)
