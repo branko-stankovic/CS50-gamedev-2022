@@ -126,7 +126,7 @@ function PlayState:update(dt)
                 -- trigger the brick's hit function, which removes it from play
                 brick:hit()
 
-                if love.math.random(1, 10) > 3 and not powerupActive then
+                if love.math.random(1, 10) > 8 and not powerupActive then
                     powerup.dy = 30
                 end
 
@@ -199,7 +199,9 @@ function PlayState:update(dt)
 
     -- if ball goes below bounds, revert to serve state and decrease health
     for b, ball in pairs(balls) do
-        if ball.y >= VIRTUAL_HEIGHT and #balls == 1 then
+        if ball.y >= VIRTUAL_HEIGHT and #balls == 2 then
+            powerupActive = false
+        elseif ball.y >= VIRTUAL_HEIGHT and #balls == 1 then
             self.health = self.health - 1
             self.paddle:decrease()
             powerupActive = false
