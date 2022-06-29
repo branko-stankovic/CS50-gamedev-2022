@@ -36,6 +36,9 @@ function PlayState:enter(params)
     powerup = Powerup()
     local powerupActive = false
 
+    key = Key()
+    gKeyActive = false
+
     balls = {}
     table.insert(balls, self.ball)
 end
@@ -63,6 +66,8 @@ function PlayState:update(dt)
 
     powerup:update(dt)
 
+    key:update(dt)
+
     for b, ball in pairs(balls) do
         if ball:collides(self.paddle) then
             -- raise ball above paddle in case it goes below it, then reverse dy
@@ -83,6 +88,12 @@ function PlayState:update(dt)
             end
 
             gSounds['paddle-hit']:play()
+
+            if love.math.random(1, 10) > 8 and not powerupActive then
+                powerup.dy = 30
+            elseif love.math.random(1, 10) > 8 then
+                key.dy = 30
+            end
         end
     end
 
@@ -113,6 +124,11 @@ function PlayState:update(dt)
         table.insert(balls, self.ball3)
     end
 
+    if key:collides(self.paddle) then
+        key:reset()
+        gKeyActive = true
+    end
+
     -- detect collision across all bricks with the ball
     for b, ball in pairs(balls) do
         for k, brick in pairs(self.bricks) do
@@ -125,10 +141,6 @@ function PlayState:update(dt)
 
                 -- trigger the brick's hit function, which removes it from play
                 brick:hit()
-
-                if love.math.random(1, 10) > 8 and not powerupActive then
-                    powerup.dy = 30
-                end
 
                 -- give some random chance to
                 -- increase paddle size if not already maxed out
@@ -201,12 +213,14 @@ function PlayState:update(dt)
     for b, ball in pairs(balls) do
         if ball.y >= VIRTUAL_HEIGHT and #balls == 2 then
             powerupActive = false
+            table.remove(balls, b)
         elseif ball.y >= VIRTUAL_HEIGHT and #balls == 1 then
             self.health = self.health - 1
             self.paddle:decrease()
             powerupActive = false
             powerup:reset()
             gSounds['hurt']:play()
+            gKeyActive = false
 
             if self.health == 0 then
                 gStateMachine:change('game-over', {
@@ -256,6 +270,7 @@ function PlayState:render()
     end
 
     powerup:render()
+    key:render()
 
     renderScore(self.score)
     renderHealth(self.health)

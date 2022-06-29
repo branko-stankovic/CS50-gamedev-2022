@@ -56,8 +56,16 @@ function GenerateQuadsBricks(atlas)
     return table.slice(GenerateQuads(atlas, 32, 16), 1, 21)
 end
 
+function GenerateQuadsLockedBricks(atlas)
+    return table.slice(GenerateQuads(atlas, 32, 16), 21, 25)
+end
+
 function GenerateQuadPowerup(atlas)
     return table.slice(GenerateQuads(atlas, 16, 16), 152, 153)
+end
+
+function GenerateQuadKey(atlas)
+    return table.slice(GenerateQuads(atlas, 16, 16), 154, 155)
 end
 
 --[[

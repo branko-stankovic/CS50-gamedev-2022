@@ -29,6 +29,8 @@ require 'src/Paddle'
 
 require 'src/Powerup'
 
+require 'src/Key'
+
 -- a basic StateMachine class which will allow us to transition to and from
 -- game states smoothly and avoid monolithic code in one file
 require 'src/StateMachine'

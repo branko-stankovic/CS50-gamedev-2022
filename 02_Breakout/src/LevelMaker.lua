@@ -47,6 +47,12 @@ function LevelMaker.createMap(level)
     -- highest color of the highest tier
     local highestColor = math.min(5, level % 5 + 3)
 
+    -- 50/50 chance that the level will contain a locked brick
+    local shouldContainKey = love.math.random(1, 10)
+    shouldContainKey = shouldContainKey > 4 and true or false
+
+    local containsKey = false
+
     -- lay out bricks such that they touch each other and fill the space
     for y = 1, numRows do
         --whether we want to enable skipping for this row
@@ -111,6 +117,12 @@ function LevelMaker.createMap(level)
                 b.tier = solidTier
             end
 
+            -- some random chance for brick to become a locked brick
+            if love.math.random(1, 10) > 7 and shouldContainKey and not containsKey then
+                b.isLocked = true
+                containsKey = true
+            end
+
             table.insert(bricks, b)
 
             -- Lua's version of the continue statement
@@ -119,7 +131,7 @@ function LevelMaker.createMap(level)
     end
 
     -- in the event we didnt generate any bricks, try again
-    if #bricks == 0 then
+    if #bricks == 0 or (shouldContainKey and not containsKey) then
         return self.createMap(level)
     else
         return bricks
