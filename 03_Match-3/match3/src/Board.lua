@@ -39,7 +39,7 @@ function Board:initializeTiles(level)
     while self:calculateMatches() do
         -- recursively initialize if matches were returned so we always have
         -- a matchless board on start
-        self:initializeTiles()
+        self:initializeTiles(level)
     end
 end
 
