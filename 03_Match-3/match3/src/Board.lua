@@ -214,7 +214,7 @@ function Board:calculateMatches()
     self.matches = matches
 
     -- return matches table if > 0, else just return false
-        return #self.matches > 0 and self.matches or false
+    return #self.matches > 0 and self.matches or false
 end
 
 --[[
