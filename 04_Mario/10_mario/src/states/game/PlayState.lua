@@ -37,6 +37,12 @@ function PlayState:init()
     self.player:changeState('falling')
 end
 
+function PlayState:enter()
+    -- when entering a new level, check if there is ground directly
+    -- below the player to land on
+    self:checkForGround()
+end
+
 function PlayState:update(dt)
     Timer.update(dt)
 
@@ -129,5 +135,20 @@ function PlayState:spawnEnemies()
                 end
             end
         end
+    end
+end
+
+--[[
+    Check if there is ground for the player to land on, when starting a level.
+    If not, move the player one tile to the right, until there is ground below him to land on.
+]]
+function PlayState:checkForGround()
+    -- x coord of tile below the player, to land on
+    tileBelowPlayerX = (self.player.x % TILE_SIZE) + 1
+
+    while(not (self.tileMap.tiles[8][tileBelowPlayerX].id == TILE_ID_GROUND))
+    do
+        self.player.x = self.player.x + TILE_SIZE
+        tileBelowPlayerX = tileBelowPlayerX + 1
     end
 end
