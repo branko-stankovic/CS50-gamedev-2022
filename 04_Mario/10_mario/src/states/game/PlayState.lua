@@ -32,6 +32,9 @@ function PlayState:init()
         level = self.level
     })
 
+    self.hasKey = false
+    self.isLevelLocked = true
+
     self:spawnEnemies()
 
     self.player:changeState('falling')

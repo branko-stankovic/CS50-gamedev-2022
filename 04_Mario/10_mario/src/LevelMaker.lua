@@ -56,7 +56,7 @@ function LevelMaker.generate(width, height)
                 blockHeight = 2
 
                 -- chance to generate bush on pillar
-                if math.random(8) == 1 then
+                if math.random(9) == 1 then
                     table.insert(objects,
                         GameObject {
                             texture = 'bushes',
@@ -77,7 +77,7 @@ function LevelMaker.generate(width, height)
                 tiles[6][x] = Tile(x, 6, tileID, nil, tileset, topperset)
                 tiles[7][x].topper = nil
             -- chance to generate bushes
-            elseif math.random(8) == 1 then
+            elseif love.math.random(8) == 1 then
                 table.insert(objects,
                     GameObject {
                         texture = 'bushes',
@@ -92,7 +92,7 @@ function LevelMaker.generate(width, height)
             end
 
             -- chance to spawn a block
-            if math.random(10) == 1 then
+            if math.random(8) == 1 then
                 table.insert(objects,
 
                     -- jump block
@@ -116,8 +116,7 @@ function LevelMaker.generate(width, height)
                             if not obj.hit then
 
                                 -- chance to spawn gem, not guaranteed
-                                if math.random(5) == 1 then
-
+                                if math.random(4) == 1 then
                                     -- mantain reference so we can set it to nil
                                     local gem = GameObject {
                                         texture = 'gems',
@@ -159,6 +158,74 @@ function LevelMaker.generate(width, height)
 
     local map = TileMap(width, height)
     map.tiles = tiles
+
+    -- now we need to place the key and the lock on the map
+
+    local coordX = love.math.random(1, width)
+    local coordY = love.math.random(2, 5)
+
+    local lockVariety = love.math.random(1, 4)
+
+    -- find an empty tile
+    while not (map.tiles[coordY][coordX].id == TILE_ID_EMPTY) do
+        coordX = love.math.random(1, width)
+        coordY = love.math.random(3, 6)
+    end
+
+    -- place a key on the empty tile
+    local key = GameObject {
+        texture = 'keys-and-locks',
+        x = (coordX - 1) * TILE_SIZE,
+        y = (coordY - 1) * TILE_SIZE,
+        width = 16,
+        height = 16,
+        frame = lockVariety,
+        collidable = true,
+        consumable = true,
+        solid = false,
+        -- when player gets the key:
+        onConsume = function(player, object)
+            gSounds['pickup']:play()
+            hasKey = true
+        end
+    }
+    table.insert(objects, key)
+
+    -- now spawn the lock of the same variety
+    local coordX = love.math.random(1, width)
+    local coordY = love.math.random(2, 5)
+
+    while not (map.tiles[coordY][coordX].id == TILE_ID_EMPTY) do
+        coordX = love.math.random(1, width)
+        coordY = love.math.random(3, 6)
+    end
+
+    table.insert(objects,
+        -- jump block
+        GameObject {
+            texture = 'keys-and-locks',
+            x = (coordX - 1) * TILE_SIZE,
+            y = (coordY - 1) * TILE_SIZE,
+            width = 16,
+            height = 16,
+
+            frame = lockVariety + 4,
+            collidable = true,
+            hit = false,
+            solid = true,
+
+            onCollide = function(obj)
+                -- if we have the key then unlock the flag for the next level
+                if not obj.hit and hasKey then
+                    isLevelLocked = false
+                    gSounds['pickup']:play()
+                    obj.hit = true
+                end
+
+                gSounds['empty-block']:play()
+            end
+        }
+    )
 
     return GameLevel(entities, objects, map)
 end
