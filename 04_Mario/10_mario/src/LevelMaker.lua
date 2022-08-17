@@ -201,7 +201,6 @@ function LevelMaker.generate(width, height)
     end
 
     table.insert(objects,
-        -- jump block
         GameObject {
             texture = 'keys-and-locks',
             x = (coordX - 1) * TILE_SIZE,
@@ -219,7 +218,6 @@ function LevelMaker.generate(width, height)
                 if hasKey then
                     isLevelLocked = false
                     gSounds['pickup']:play()
-                    obj.hit = true
                 end
 
                 gSounds['empty-block']:play()
@@ -262,14 +260,16 @@ function LevelMaker.generate(width, height)
             width = 16,
             height = 16,
 
-            frame = 7,
+            frame = 9 * love.math.random(1, 4) - 2,
             collidable = true,
             hit = false,
             solid = true,
 
             onCollide = function(obj)
-                if isLevelLocked == false then
+                if hasKey and (isLevelLocked == false) then
                     gStateMachine:change('play')
+                    hasKey = false
+                    isLevelLocked = true
                 end
             end
         }
