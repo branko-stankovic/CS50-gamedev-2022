@@ -169,7 +169,7 @@ function LevelMaker.generate(width, height)
     -- find an empty tile
     while not (map.tiles[coordY][coordX].id == TILE_ID_EMPTY) do
         coordX = love.math.random(1, width)
-        coordY = love.math.random(3, 6)
+        coordY = love.math.random(2, 4)
     end
 
     -- place a key on the empty tile
@@ -193,7 +193,7 @@ function LevelMaker.generate(width, height)
 
     -- now spawn the lock of the same variety
     local coordX = love.math.random(1, width)
-    local coordY = love.math.random(2, 5)
+    local coordY = love.math.random(2, 4)
 
     while not (map.tiles[coordY][coordX].id == TILE_ID_EMPTY) do
         coordX = love.math.random(1, width)
@@ -216,13 +216,61 @@ function LevelMaker.generate(width, height)
 
             onCollide = function(obj)
                 -- if we have the key then unlock the flag for the next level
-                if not obj.hit and hasKey then
+                if hasKey then
                     isLevelLocked = false
                     gSounds['pickup']:play()
                     obj.hit = true
                 end
 
                 gSounds['empty-block']:play()
+            end
+        }
+    )
+
+    -- and finally spawn a pole and a flag on the end of the level
+    local coordX = width - 1
+    local coordY = 6
+
+    -- find an empty tile to put the pole on, but with ground underneath it so it doesn't just hang in the air above the chasm
+    while not (map.tiles[coordY][coordX].id == TILE_ID_EMPTY) and (map.tiles[coordY + 1][coordX] == TILE_ID_GROUND) do
+        coordX = coordX - 1
+    end
+
+    table.insert(objects,
+        GameObject {
+            texture = 'poles',
+            x = (coordX - 1) * TILE_SIZE,
+            y = (coordY - 3) * TILE_SIZE,
+            width = 16,
+            height = 48,
+
+            frame = love.math.random(1, 6),
+            collidable = true,
+            solid = false,
+
+            onCollide = function(obj)
+
+            end
+        }
+    )
+
+    table.insert(objects,
+        GameObject {
+            texture = 'flags',
+            x = (coordX - 1) * TILE_SIZE + (TILE_SIZE / 2),
+            y = (coordY - 3) * TILE_SIZE,
+            width = 16,
+            height = 16,
+
+            frame = 7,
+            collidable = true,
+            hit = false,
+            solid = true,
+
+            onCollide = function(obj)
+                if isLevelLocked == false then
+                    gStateMachine:change('play')
+                end
             end
         }
     )
