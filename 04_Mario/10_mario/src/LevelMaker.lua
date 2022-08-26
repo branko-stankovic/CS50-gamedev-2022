@@ -247,33 +247,53 @@ function LevelMaker.generate(width, height)
             solid = false,
 
             onCollide = function(obj)
-
+                local flag = GameObject {
+                    texture = 'flags',
+                    x = (coordX - 1) * TILE_SIZE + (TILE_SIZE / 2),
+                    y = (coordY - 3) * TILE_SIZE,
+                    width = 16,
+                    height = 16,
+                    frame = 9 * love.math.random(1, 4) - 2,
+                    collidable = true,
+                    consumable = true,
+                    solid = false,
+                    onConsume = function(player, object)
+                        gStateMachine:change('play', {
+                            score = player.score,
+                            width = width + 10
+                        })
+                    end
+                }
+                table.insert(objects, flag)
             end
         }
     )
 
-    table.insert(objects,
-        GameObject {
-            texture = 'flags',
-            x = (coordX - 1) * TILE_SIZE + (TILE_SIZE / 2),
-            y = (coordY - 3) * TILE_SIZE,
-            width = 16,
-            height = 16,
+    -- table.insert(objects,
+    --     GameObject {
+    --         texture = 'flags',
+    --         x = (coordX - 1) * TILE_SIZE + (TILE_SIZE / 2),
+    --         y = (coordY - 3) * TILE_SIZE,
+    --         width = 16,
+    --         height = 16,
 
-            frame = 9 * love.math.random(1, 4) - 2,
-            collidable = true,
-            hit = false,
-            solid = true,
+    --         frame = 9 * love.math.random(1, 4) - 2,
+    --         collidable = true,
+    --         hit = false,
+    --         solid = true,
 
-            onCollide = function(obj)
-                if hasKey and (isLevelLocked == false) then
-                    gStateMachine:change('play')
-                    hasKey = false
-                    isLevelLocked = true
-                end
-            end
-        }
-    )
+    --         onCollide = function(obj)
+    --             if hasKey and (isLevelLocked == false) then
+    --                 gStateMachine:change('play', {
+    --                     score = self.player.score,
+    --                     width = width + 10
+    --                 })
+    --                 hasKey = false
+    --                 isLevelLocked = true
+    --             end
+    --         end
+    --     }
+    -- )
 
     return GameLevel(entities, objects, map)
 end
