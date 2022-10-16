@@ -11,6 +11,9 @@ public class SkyscraperSpawner : MonoBehaviour {
 
 		// aysnchronous infinite skyscraper spawning
 		StartCoroutine(SpawnSkyscrapers());
+
+		// reset speed when restarting the game/scene
+		speed = 10f;
 	}
 
 	// Update is called once per frame
