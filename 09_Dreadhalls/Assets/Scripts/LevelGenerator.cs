@@ -58,7 +58,12 @@ public class LevelGenerator : MonoBehaviour {
 				}
 
 				// create floor and ceiling
-				CreateChildPrefab(floorPrefab, floorParent, x, 0, z);
+				// there's a small chance to spawn a hole in the ground, somewhere in the maze
+				if (mapData[z, x]) {
+					CreateChildPrefab(floorPrefab, floorParent, x, 0, z);
+				} else if (Random.value > 0.02) {
+					CreateChildPrefab(floorPrefab, floorParent, x, 0, z);
+				}
 
 				if (generateRoof) {
 					CreateChildPrefab(ceilingPrefab, wallsParent, x, 4, z);
